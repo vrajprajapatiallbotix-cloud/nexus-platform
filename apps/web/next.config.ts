@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 
   experimental: {
-    serverActions: { allowedOrigins: ['localhost:3000', '*.nexusplatform.io'] },
+    serverActions: { allowedOrigins: ['localhost:3000', '*.nexusplatform.io', '*.onrender.com'] },
   },
 
   images: {

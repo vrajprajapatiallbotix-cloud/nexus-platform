@@ -37,8 +37,10 @@ async function bootstrap(): Promise<void> {
   app.use(compression());
 
   // ---- CORS ----
+  const corsOrigins = configService.get<string>('CORS_ORIGINS', '');
+  const extraOrigins = corsOrigins ? corsOrigins.split(',').map(o => o.trim()) : [];
   app.enableCors({
-    origin: [appUrl, /\.nexusplatform\.io$/],
+    origin: [appUrl, ...extraOrigins, /\.nexusplatform\.io$/, /\.onrender\.com$/],
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Workspace-Id', 'X-Organization-Id', 'X-Request-Id'],
