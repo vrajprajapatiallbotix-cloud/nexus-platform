@@ -14,8 +14,18 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { RedisIoAdapter } from './common/adapters/redis-io.adapter.js';
 
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled rejection:', reason);
+  process.exit(1);
+});
+
 async function bootstrap(): Promise<void> {
   const logger = pino({ level: process.env['LOG_LEVEL'] ?? 'info' });
+  console.log('[BOOT] Starting Nexus API...');
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
@@ -112,12 +122,14 @@ async function bootstrap(): Promise<void> {
   // ---- Trust proxy for rate limiting & IP ----
   app.set('trust proxy', 1);
 
+  console.log(`[BOOT] Listening on port ${port}...`);
   await app.listen(port);
   logger.info(`Nexus API running on http://localhost:${port} [${nodeEnv}]`);
   logger.info(`Swagger docs: http://localhost:${port}/docs`);
 }
 
 bootstrap().catch((err) => {
-  console.error('Failed to start Nexus API', err);
+  console.error('[FATAL] Failed to start Nexus API:', err?.message ?? err);
+  console.error('[FATAL] Stack:', err?.stack);
   process.exit(1);
 });
