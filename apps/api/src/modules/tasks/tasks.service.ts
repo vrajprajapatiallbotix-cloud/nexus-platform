@@ -183,7 +183,7 @@ export class TasksService {
         action: 'task.updated',
         entityType: 'task',
         entityId: id,
-        data: { changes: dto as unknown, oldValues: { status: oldStatus } } as unknown as import('@prisma/client').Prisma.JsonObject,
+        data: { changes: dto as unknown, oldValues: { status: oldStatus } } as unknown as Record<string, unknown>,
       },
     });
 
