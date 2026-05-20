@@ -10,8 +10,8 @@ services:
     name: nexus-api
     runtime: node
     plan: free
-    buildCommand: npm install -g pnpm@9 && pnpm install --frozen-lockfile && pnpm --filter @nexus/database exec prisma generate && pnpm --filter @nexus/database exec prisma migrate deploy && pnpm --filter @nexus/api run build
-    startCommand: node apps/api/dist/main.js
+    buildCommand: npm install -g pnpm@9 && pnpm install --frozen-lockfile && cd packages/database && npx prisma generate && cd ../.. && pnpm --filter @nexus/api run build
+    startCommand: cd packages/database && npx prisma migrate deploy && cd ../.. && node apps/api/dist/main.js
     healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_ENV
@@ -33,8 +33,6 @@ services:
         generateValue: true
       - key: ENCRYPTION_KEY
         value: change-this-32char-production-key
-      # Set this manually in Render dashboard after first API deploy:
-      # CORS_ORIGINS = https://nexus-web.onrender.com
 
   # ── Next.js Web ────────────────────────────────────────────────────────────
   - type: web
@@ -46,11 +44,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # After API deploys, update this to: https://nexus-api.onrender.com/api/v1
       - key: NEXT_PUBLIC_API_URL
-        value: https://nexus-api.onrender.com/api/v1
+        value: https://nexus-api-tvnt.onrender.com/api/v1
       - key: NEXT_PUBLIC_WS_URL
-        value: wss://nexus-api.onrender.com
+        value: wss://nexus-api-tvnt.onrender.com
 
 databases:
   # ── PostgreSQL ─────────────────────────────────────────────────────────────
