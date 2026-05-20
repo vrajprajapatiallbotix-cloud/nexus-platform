@@ -10,7 +10,7 @@ services:
     name: nexus-api
     runtime: node
     plan: free
-    buildCommand: npm install -g pnpm@9.1.0 && pnpm install && pnpm --filter @nexus/api run build
+    buildCommand: npm install -g pnpm@9.1.0 && pnpm install --prod=false && pnpm --filter @nexus/api run build
     startCommand: node_modules/.bin/prisma migrate deploy --schema packages/database/prisma/schema.prisma && node apps/api/dist/main.js
     healthCheckPath: /api/v1/health
     envVars:
@@ -39,7 +39,7 @@ services:
     name: nexus-web
     runtime: node
     plan: free
-    buildCommand: npm install -g pnpm@9.1.0 && pnpm install && pnpm --filter @nexus/web run build
+    buildCommand: npm install -g pnpm@9.1.0 && pnpm install --prod=false && pnpm --filter @nexus/web run build
     startCommand: pnpm --filter @nexus/web run start
     envVars:
       - key: NODE_ENV
