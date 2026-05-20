@@ -10,8 +10,8 @@ services:
     name: nexus-api
     runtime: node
     plan: free
-    buildCommand: npm install -g pnpm@9 && pnpm install --frozen-lockfile && cd packages/database && npx prisma generate && cd ../.. && pnpm --filter @nexus/api run build
-    startCommand: cd packages/database && npx prisma migrate deploy && cd ../.. && node apps/api/dist/main.js
+    buildCommand: npm install -g pnpm@9 && pnpm install --frozen-lockfile && pnpm --filter @nexus/database run db:generate && pnpm --filter @nexus/api run build
+    startCommand: pnpm --filter @nexus/database run db:migrate:deploy && node apps/api/dist/main.js
     healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_ENV
