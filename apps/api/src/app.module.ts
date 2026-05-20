@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
-import { BullModule } from '@nestjs/bull';
+// import { BullModule } from '@nestjs/bull'; // TEMPORARILY DISABLED - debug Redis crash
 import { CacheModule } from '@nestjs/cache-manager';
 import { LoggerModule } from 'nestjs-pino';
 
@@ -84,27 +84,27 @@ import { HealthModule } from './modules/health/health.module.js';
     // ---- Task Scheduler ----
     ScheduleModule.forRoot(),
 
-    // ---- Queue (Bull) ----
-    BullModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const redisUrl = config.get<string>('REDIS_URL');
-        return {
-          redis: redisUrl ?? {
-            host: config.get('REDIS_HOST', 'localhost'),
-            port: config.get<number>('REDIS_PORT', 6379),
-            password: config.get('REDIS_PASSWORD'),
-            db: config.get<number>('REDIS_DB', 0),
-          },
-          defaultJobOptions: {
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 1000 },
-            removeOnComplete: 100,
-            removeOnFail: 500,
-          },
-        };
-      },
-    }),
+    // ---- Queue (Bull) ---- TEMPORARILY DISABLED - debug Redis crash
+    // BullModule.forRootAsync({
+    //   inject: [ConfigService],
+    //   useFactory: (config: ConfigService) => {
+    //     const redisUrl = config.get<string>('REDIS_URL');
+    //     return {
+    //       redis: redisUrl ?? {
+    //         host: config.get('REDIS_HOST', 'localhost'),
+    //         port: config.get<number>('REDIS_PORT', 6379),
+    //         password: config.get('REDIS_PASSWORD'),
+    //         db: config.get<number>('REDIS_DB', 0),
+    //       },
+    //       defaultJobOptions: {
+    //         attempts: 3,
+    //         backoff: { type: 'exponential', delay: 1000 },
+    //         removeOnComplete: 100,
+    //         removeOnFail: 500,
+    //       },
+    //     };
+    //   },
+    // }),
 
     // ---- Cache (in-memory for development; swap for Redis store in production) ----
     CacheModule.register({

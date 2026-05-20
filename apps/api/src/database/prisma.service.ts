@@ -34,7 +34,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   async onModuleInit(): Promise<void> {
+    console.log('🟡 Connecting Prisma...');
     await this.$connect();
+    console.log('🟢 Prisma Connected');
     this.logger.log('Database connected');
   }
 

@@ -1,12 +1,16 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+
   try {
-    console.log('🚀 Starting Nexus API...');
+    logger.log('🚀 Starting Nexus API...');
 
     const app = await NestFactory.create(AppModule);
+
+    logger.log('✅ App module initialized');
 
     app.enableCors();
 
@@ -20,11 +24,19 @@ async function bootstrap() {
 
     const port = process.env.PORT || 4000;
 
+    logger.log(`🌐 Binding to port ${port}`);
+
     await app.listen(port, '0.0.0.0');
 
-    console.log(`✅ Nexus API running on port ${port}`);
+    logger.log(`✅ Nexus API running on port ${port}`);
   } catch (error) {
-    console.error('❌ BOOT ERROR:', error);
+    console.error('❌ FULL BOOT ERROR:');
+    console.error(error);
+
+    if (error?.stack) {
+      console.error(error.stack);
+    }
+
     process.exit(1);
   }
 }
