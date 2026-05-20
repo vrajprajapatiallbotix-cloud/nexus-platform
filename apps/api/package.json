@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "prisma generate --schema ../../packages/database/prisma/schema.prisma && node -e \"const path=require('path'),fs=require('fs');try{const r=require.resolve('@prisma/client/package.json'),real=path.join(path.dirname(r),'../.prisma/client'),gen=path.resolve('../../node_modules/.prisma/client');console.log('[prisma-copy] real='+real);console.log('[prisma-copy] gen='+gen);if(fs.existsSync(gen)&&real!==gen){fs.cpSync(gen,real,{recursive:true,force:true});console.log('[prisma-copy] copied ok')}else{console.log('[prisma-copy] no copy needed')}}catch(e){console.error('[prisma-copy] err:',e.message)}\" && nest build",
+    "build": "nest build",
     "dev": "nest start --watch",
     "start": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
