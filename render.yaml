@@ -22,6 +22,7 @@ services:
       pnpm exec prisma migrate deploy --schema packages/database/prisma/schema.prisma
 
     startCommand: |
+      pnpm exec prisma generate --schema packages/database/prisma/schema.prisma &&
       node apps/api/dist/main.js
 
     healthCheckPath: /api/v1/health
