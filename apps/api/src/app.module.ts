@@ -82,23 +82,26 @@ import { HealthModule } from './modules/health/health.module.js';
     // ---- Task Scheduler ----
     ScheduleModule.forRoot(),
 
-    // ---- Queue (BullMQ) ----
+    // ---- Queue (Bull) ----
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        redis: {
-          host: config.get('REDIS_HOST', 'localhost'),
-          port: config.get('REDIS_PORT', 6379),
-          password: config.get('REDIS_PASSWORD'),
-          db: config.get('REDIS_DB', 0),
-        },
-        defaultJobOptions: {
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 1000 },
-          removeOnComplete: 100,
-          removeOnFail: 500,
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>('REDIS_URL');
+        return {
+          redis: redisUrl ?? {
+            host: config.get('REDIS_HOST', 'localhost'),
+            port: config.get<number>('REDIS_PORT', 6379),
+            password: config.get('REDIS_PASSWORD'),
+            db: config.get<number>('REDIS_DB', 0),
+          },
+          defaultJobOptions: {
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 1000 },
+            removeOnComplete: 100,
+            removeOnFail: 500,
+          },
+        };
+      },
     }),
 
     // ---- Cache (in-memory for development; swap for Redis store in production) ----

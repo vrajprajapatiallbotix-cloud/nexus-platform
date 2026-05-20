@@ -51,10 +51,14 @@ async function bootstrap(): Promise<void> {
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.setGlobalPrefix('api');
 
-  // ---- WebSocket adapter with Redis ----
-  const redisIoAdapter = new RedisIoAdapter(app, configService);
-  await redisIoAdapter.connectToRedis();
-  app.useWebSocketAdapter(redisIoAdapter);
+  // ---- WebSocket adapter with Redis (falls back to default if Redis unreachable) ----
+  try {
+    const redisIoAdapter = new RedisIoAdapter(app, configService);
+    await redisIoAdapter.connectToRedis();
+    app.useWebSocketAdapter(redisIoAdapter);
+  } catch (err) {
+    console.warn('Redis WebSocket adapter unavailable, using default adapter:', (err as Error).message);
+  }
 
   // ---- Global pipes & filters ----
   app.useGlobalPipes(
