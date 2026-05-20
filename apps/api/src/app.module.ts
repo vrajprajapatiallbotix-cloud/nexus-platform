@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { HealthController } from './health/health.controller.js';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -41,6 +42,7 @@ import { TimeTrackingModule } from './modules/time-tracking/time-tracking.module
 import { HealthModule } from './modules/health/health.module.js';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     // ---- Config ----
     ConfigModule.forRoot({

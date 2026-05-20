@@ -1,56 +1,80 @@
 services:
-  # ── Redis ──────────────────────────────────────────────────────────────────
+  # ── Redis ─────────────────────────────────────────
   - type: redis
     name: nexus-redis
     plan: free
     ipAllowList: []
 
-  # ── NestJS API ─────────────────────────────────────────────────────────────
+  # ── NestJS API ────────────────────────────────────
   - type: web
     name: nexus-api
     runtime: node
     plan: free
-    buildCommand: npm install -g pnpm@9.1.0 && rm -rf node_modules && pnpm install && pnpm exec prisma generate --schema packages/database/prisma/schema.prisma && pnpm --filter @nexus/api run build
-    startCommand: npx prisma migrate deploy --schema packages/database/prisma/schema.prisma && node apps/api/dist/main.js
+
+    buildCommand: |
+      npm install -g pnpm@9.1.0 &&
+      rm -rf node_modules &&
+      pnpm install &&
+      pnpm exec prisma generate --schema packages/database/prisma/schema.prisma &&
+      pnpm --filter @nexus/api run build
+
+    preDeployCommand: |
+      pnpm exec prisma migrate deploy --schema packages/database/prisma/schema.prisma
+
+    startCommand: |
+      node apps/api/dist/main.js
+
     healthCheckPath: /api/v1/health
+
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 4000
+
       - key: DATABASE_URL
         fromDatabase:
           name: nexus-db
           property: connectionString
+
       - key: REDIS_URL
         fromService:
           type: redis
           name: nexus-redis
           property: connectionString
+
       - key: JWT_SECRET
         generateValue: true
+
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: ENCRYPTION_KEY
-        value: change-this-32char-production-key
 
-  # ── Next.js Web ────────────────────────────────────────────────────────────
+      - key: ENCRYPTION_KEY
+        value: 12345678901234567890123456789012
+
+  # ── Next.js Web ───────────────────────────────────
   - type: web
     name: nexus-web
     runtime: node
     plan: free
-    buildCommand: npm install -g pnpm@9.1.0 && pnpm install --ignore-scripts && pnpm --filter @nexus/web run build
-    startCommand: pnpm --filter @nexus/web run start
+
+    buildCommand: |
+      npm install -g pnpm@9.1.0 &&
+      pnpm install --ignore-scripts &&
+      pnpm --filter @nexus/web run build
+
+    startCommand: |
+      pnpm --filter @nexus/web run start
+
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: NEXT_PUBLIC_API_URL
-        value: https://nexus-api-tvnt.onrender.com/api/v1
+        value: https://nexus-api.onrender.com/api/v1
+
       - key: NEXT_PUBLIC_WS_URL
-        value: wss://nexus-api-tvnt.onrender.com
+        value: wss://nexus-api.onrender.com
 
 databases:
-  # ── PostgreSQL ─────────────────────────────────────────────────────────────
   - name: nexus-db
     plan: free
     databaseName: nexus_db
