@@ -13,16 +13,13 @@ services:
 
     buildCommand: |
       npm install -g pnpm@9.1.0 &&
-      rm -rf node_modules &&
       pnpm install &&
-      pnpm exec prisma generate --schema packages/database/prisma/schema.prisma &&
       pnpm --filter @nexus/api run build
 
     preDeployCommand: |
       pnpm exec prisma migrate deploy --schema packages/database/prisma/schema.prisma
 
     startCommand: |
-      pnpm exec prisma generate --schema packages/database/prisma/schema.prisma &&
       node apps/api/dist/main.js
 
     healthCheckPath: /api/v1/health
