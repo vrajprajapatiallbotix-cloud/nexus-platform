@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
@@ -39,20 +39,42 @@ export interface AiTranslationResult {
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  private readonly openai: OpenAI;
-  private readonly anthropic: Anthropic;
+  private readonly openai: OpenAI | null = null;
+  private readonly anthropic: Anthropic | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {
-    this.openai = new OpenAI({ apiKey: configService.get<string>('OPENAI_API_KEY') });
-    this.anthropic = new Anthropic({ apiKey: configService.get<string>('ANTHROPIC_API_KEY') });
+    const openaiKey = configService.get<string>('OPENAI_API_KEY');
+    const anthropicKey = configService.get<string>('ANTHROPIC_API_KEY');
+
+    if (openaiKey) {
+      this.openai = new OpenAI({ apiKey: openaiKey });
+    } else {
+      this.logger.warn('OPENAI_API_KEY not set — AI features disabled');
+    }
+
+    if (anthropicKey) {
+      this.anthropic = new Anthropic({ apiKey: anthropicKey });
+    } else {
+      this.logger.warn('ANTHROPIC_API_KEY not set — Anthropic features disabled');
+    }
+  }
+
+  private requireOpenAI(): OpenAI {
+    if (!this.openai) throw new ServiceUnavailableException('OpenAI is not configured on this server');
+    return this.openai;
+  }
+
+  private requireAnthropic(): Anthropic {
+    if (!this.anthropic) throw new ServiceUnavailableException('Anthropic is not configured on this server');
+    return this.anthropic;
   }
 
   // ---- Task AI ----
   async generateTasksFromDescription(description: string, projectContext?: string): Promise<AiTaskSuggestion[]> {
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -76,7 +98,7 @@ Generate 5-10 tasks that cover all aspects of the described work. Be specific an
   }
 
   async generateSubtasks(taskTitle: string, taskDescription?: string): Promise<string[]> {
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -96,7 +118,7 @@ Generate 5-10 tasks that cover all aspects of the described work. Be specific an
   }
 
   async generateTaskDescription(title: string): Promise<string> {
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -135,7 +157,7 @@ Generate 5-10 tasks that cover all aspects of the described work. Be specific an
       urgent: project.tasks.filter((t) => t.priority === 'URGENT').length,
     };
 
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -169,7 +191,7 @@ Return JSON: { summary, riskLevel: "low"|"medium"|"high", risks: [], recommendat
 
   // ---- Document AI ----
   async generateDocumentContent(prompt: string, context?: string): Promise<string> {
-    const message = await this.anthropic.messages.create({
+    const message = await this.requireAnthropic().messages.create({
       model: 'claude-opus-4-7-20251101',
       max_tokens: 4096,
       messages: [
@@ -187,7 +209,7 @@ Format the response in clear markdown with appropriate headings, bullet points, 
   }
 
   async summarizeDocument(content: string): Promise<string> {
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -204,7 +226,7 @@ Format the response in clear markdown with appropriate headings, bullet points, 
 
   // ---- Meeting AI ----
   async generateMeetingSummary(transcript: string, participants?: string[]): Promise<AiMeetingSummary> {
-    const message = await this.anthropic.messages.create({
+    const message = await this.requireAnthropic().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       messages: [
@@ -245,7 +267,7 @@ Return as JSON: { summary, keyPoints: [], actionItems: [{task, assignee?, dueDat
 
   // ---- Translation ----
   async translateText(text: string, targetLanguage: string, sourceLanguage = 'auto'): Promise<AiTranslationResult> {
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: [
         {
@@ -273,7 +295,7 @@ Preserve formatting, tone, and nuances. Return JSON: { translatedText, sourceLan
   async transcribeAudio(audioBuffer: Buffer, language?: string): Promise<{ text: string; language: string }> {
     const file = new File([audioBuffer as unknown as BlobPart], 'audio.webm', { type: 'audio/webm' });
 
-    const transcription = await this.openai.audio.transcriptions.create({
+    const transcription = await this.requireOpenAI().audio.transcriptions.create({
       file,
       model: 'whisper-1',
       language,
@@ -300,7 +322,7 @@ You help users with:
 
 Be concise, helpful, and proactive. When appropriate, suggest specific actions the user can take.`;
 
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: systemPrompt },
@@ -324,7 +346,7 @@ Be concise, helpful, and proactive. When appropriate, suggest specific actions t
 
     const patterns = recentActivity.map((a) => `${a.action} on ${a.entityType}`).join(', ');
 
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -393,7 +415,7 @@ Be concise, helpful, and proactive. When appropriate, suggest specific actions t
 
     const totalHours = Math.round((timeEntries._sum.duration ?? 0) / 3600);
 
-    const completion = await this.openai.chat.completions.create({
+    const completion = await this.requireOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -418,7 +440,7 @@ Be concise, helpful, and proactive. When appropriate, suggest specific actions t
   // ---- RAG (Knowledge Base search) ----
   async searchKnowledgeBase(query: string, workspaceId: string): Promise<Array<{ content: string; sourceType: string; sourceId: string; score: number }>> {
     // Generate embedding for the query
-    const embeddingResponse = await this.openai.embeddings.create({
+    const embeddingResponse = await this.requireOpenAI().embeddings.create({
       model: 'text-embedding-3-small',
       input: query,
     });

@@ -48,6 +48,12 @@ services:
       - key: ENCRYPTION_KEY
         value: 12345678901234567890123456789012
 
+      - key: OPENAI_API_KEY
+        value: optional-set-your-real-key-in-render-dashboard
+
+      - key: ANTHROPIC_API_KEY
+        value: optional-set-your-real-key-in-render-dashboard
+
   # ── Next.js Web ───────────────────────────────────
   - type: web
     name: nexus-web
