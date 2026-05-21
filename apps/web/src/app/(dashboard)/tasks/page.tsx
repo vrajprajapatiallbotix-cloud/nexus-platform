@@ -418,13 +418,13 @@ function AssigneeFilterPicker({ assigneeFilter, assigneePickerOpen, setAssigneeP
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-0" align="start">
-        <Command shouldFilter={false}>
+        <Command>
           <CommandInput placeholder="Search person..." />
           <CommandList>
             <CommandGroup>
               <CommandItem
                 value="everyone"
-                onSelect={() => { setAssigneeFilter(null); setAssigneePickerOpen(false); }}
+                onMouseDown={(e) => { e.preventDefault(); setAssigneeFilter(null); setAssigneePickerOpen(false); }}
                 className="flex items-center gap-2 cursor-pointer"
               >
                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -434,8 +434,8 @@ function AssigneeFilterPicker({ assigneeFilter, assigneePickerOpen, setAssigneeP
               {uniqueAssignees.map(a => (
                 <CommandItem
                   key={a.id}
-                  value={a.id}
-                  onSelect={() => { setAssigneeFilter(a.id); setAssigneePickerOpen(false); }}
+                  value={a.label}
+                  onMouseDown={(e) => { e.preventDefault(); setAssigneeFilter(a.id); setAssigneePickerOpen(false); }}
                   className="flex items-center gap-2 cursor-pointer"
                 >
                   <Avatar className={cn('h-5 w-5 shrink-0', a.isExternal && 'ring-1 ring-dashed ring-orange-400')}>

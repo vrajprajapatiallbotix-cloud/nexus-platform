@@ -238,7 +238,7 @@ export function CreateTaskModal({ projectId, defaultStatus = 'TODO', onClose, on
                     <CommandGroup>
                       <CommandItem
                         value="unassigned"
-                        onSelect={() => { setAssignee(null); setExternalAssigneeName(''); setAssigneeOpen(false); }}
+                        onMouseDown={(e) => { e.preventDefault(); setAssignee(null); setExternalAssigneeName(''); setAssigneeOpen(false); }}
                       >
                         <User className="mr-2 h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Unassigned</span>
@@ -249,7 +249,7 @@ export function CreateTaskModal({ projectId, defaultStatus = 'TODO', onClose, on
                           <CommandItem
                             key={m.id}
                             value={m.displayName}
-                            onSelect={() => { setAssignee(m); setExternalAssigneeName(''); setAssigneeOpen(false); }}
+                            onMouseDown={(e) => { e.preventDefault(); setAssignee(m); setExternalAssigneeName(''); setAssigneeOpen(false); }}
                           >
                             <Avatar className="h-5 w-5 mr-2 shrink-0">
                               <AvatarImage src={m.avatarUrl ?? ''} />
@@ -262,7 +262,8 @@ export function CreateTaskModal({ projectId, defaultStatus = 'TODO', onClose, on
                       {assigneeSearch.trim().length > 1 && !members.some(m => m.displayName.toLowerCase() === assigneeSearch.toLowerCase()) && (
                         <CommandItem
                           value={`create-${assigneeSearch}`}
-                          onSelect={() => {
+                          onMouseDown={(e) => {
+                            e.preventDefault();
                             setAssignee(null);
                             setExternalAssigneeName(assigneeSearch.trim());
                             setAssigneeSearch('');
