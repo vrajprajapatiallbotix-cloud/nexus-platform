@@ -17,7 +17,8 @@ services:
       pnpm --filter @nexus/api run build
 
     preDeployCommand: |
-      pnpm exec prisma migrate deploy --schema packages/database/prisma/schema.prisma
+      pnpm exec prisma migrate deploy --schema packages/database/prisma/schema.prisma &&
+      pnpm --filter @nexus/database run db:seed
 
     startCommand: |
       node apps/api/dist/main.js
