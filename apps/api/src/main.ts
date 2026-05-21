@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -10,9 +10,21 @@ async function bootstrap() {
 
     const app = await NestFactory.create(AppModule);
 
-    logger.log('✅ App module initialized');
+    // ---- CORS (must allow specific origin + credentials) ----
+    app.enableCors({
+      origin: [
+        'https://nexus-web-a507.onrender.com',
+        'http://localhost:3000',
+        'http://localhost:3001',
+      ],
+      credentials: true,
+      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Workspace-Id', 'X-Organization-Id', 'X-Request-Id'],
+    });
 
-    app.enableCors();
+    // ---- Global prefix + versioning so routes match /api/v1/... ----
+    app.setGlobalPrefix('api');
+    app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
     app.useGlobalPipes(
       new ValidationPipe({
@@ -32,11 +44,7 @@ async function bootstrap() {
   } catch (error) {
     console.error('❌ FULL BOOT ERROR:');
     console.error(error);
-
-    if (error?.stack) {
-      console.error(error.stack);
-    }
-
+    if (error?.stack) console.error(error.stack);
     process.exit(1);
   }
 }
