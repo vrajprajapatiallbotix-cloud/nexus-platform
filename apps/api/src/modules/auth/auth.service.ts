@@ -48,11 +48,17 @@ export class AuthService {
         firstName: dto.firstName,
         lastName: dto.lastName,
         passwordHash,
-        status: 'PENDING_VERIFICATION',
+        status: 'ACTIVE',
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
       },
     });
 
-    await this.emailVerificationService.sendVerificationEmail(user.id, user.email);
+    try {
+      await this.emailVerificationService.sendVerificationEmail(user.id, user.email);
+    } catch (err) {
+      this.logger.warn(`Email verification send failed (continuing): ${(err as Error).message}`);
+    }
     this.events.emit('user.registered', { user, ipAddress });
     this.logger.log(`New user registered: ${user.email}`);
 
