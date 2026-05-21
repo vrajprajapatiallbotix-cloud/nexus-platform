@@ -90,19 +90,19 @@ async function main() {
   // Manager (full access) — login: manager@nexus-demo.com / Demo123!
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@nexus-demo.com' },
-    update: { role: 'MANAGER' },
+    update: { role: 'SUPER_ADMIN', status: 'ACTIVE', emailVerified: true },
     create: {
       email: 'admin@nexus-demo.com',
-      displayName: 'Alex Johnson',
-      firstName: 'Alex',
-      lastName: 'Johnson',
+      displayName: 'Admin',
+      firstName: 'Admin',
+      lastName: 'Nanta',
       passwordHash,
       emailVerified: true,
       emailVerifiedAt: new Date(),
       status: 'ACTIVE',
-      role: 'MANAGER',
+      role: 'SUPER_ADMIN',
       onboardingCompleted: true,
-      bio: 'Platform manager and product lead',
+      bio: 'Super Administrator — full platform access',
       timezone: 'America/New_York',
     },
   });
@@ -212,8 +212,8 @@ async function main() {
 
   // Add members to org — role mirrors user.role so RBAC is consistent
   const orgRoleFor = (user: { role: string }, isFirst: boolean): string => {
-    if (isFirst) return 'MANAGER';
-    return user.role; // MANAGER, ADMIN, MEMBER, etc.
+    if (isFirst) return 'SUPER_ADMIN';
+    return user.role;
   };
 
   await Promise.all(
