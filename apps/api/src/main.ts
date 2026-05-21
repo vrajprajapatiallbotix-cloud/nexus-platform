@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger, VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -33,6 +34,7 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
       }),
     );
+    app.useGlobalInterceptors(new TransformInterceptor());
 
     const port = process.env.PORT || 4000;
 
