@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { TaskDetailDrawer } from '@/components/tasks/task-detail-drawer';
 import { CreateTaskModal } from '@/components/tasks/create-task-modal';
 import { api } from '@/lib/api';
@@ -384,6 +383,64 @@ export default function TasksPage() {
 
 type UniqueAssignee = { id: string; label: string; avatarUrl?: string | null; isExternal?: boolean };
 
+function AssigneeDropdownList({ assigneeFilter, setAssigneeFilter, setAssigneePickerOpen, uniqueAssignees }: {
+  assigneeFilter: string | null;
+  setAssigneeFilter: (v: string | null) => void;
+  setAssigneePickerOpen: (v: boolean) => void;
+  uniqueAssignees: UniqueAssignee[];
+}) {
+  const [search, setSearch] = useState('');
+  const filtered = uniqueAssignees.filter(a => !search || a.label.toLowerCase().includes(search.toLowerCase()));
+
+  const pick = (id: string | null) => { setAssigneeFilter(id); setAssigneePickerOpen(false); };
+
+  return (
+    <div className="flex flex-col py-1">
+      <div className="px-2 pb-1">
+        <input
+          autoFocus
+          className="w-full px-2 py-1.5 text-sm bg-transparent border border-border rounded-md outline-none placeholder:text-muted-foreground"
+          placeholder="Search person..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
+      <div className="max-h-52 overflow-y-auto">
+        <button
+          type="button"
+          onClick={() => pick(null)}
+          className={cn('flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent transition-colors', !assigneeFilter && 'bg-accent')}
+        >
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1 text-left text-muted-foreground">Everyone</span>
+          {!assigneeFilter && <span className="text-primary text-xs">✓</span>}
+        </button>
+        {filtered.map(a => (
+          <button
+            key={a.id}
+            type="button"
+            onClick={() => pick(a.id)}
+            className={cn('flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent transition-colors', assigneeFilter === a.id && 'bg-accent')}
+          >
+            <Avatar className={cn('h-5 w-5 shrink-0', a.isExternal && 'ring-1 ring-dashed ring-orange-400')}>
+              {!a.isExternal && <AvatarImage src={a.avatarUrl ?? ''} />}
+              <AvatarFallback className={cn('text-[10px]', a.isExternal ? 'bg-orange-100 text-orange-700' : 'bg-primary text-primary-foreground')}>
+                {a.label[0]?.toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="flex-1 text-left truncate">{a.label}</span>
+            {a.isExternal && <span className="text-[10px] text-orange-500">ext</span>}
+            {assigneeFilter === a.id && <span className="text-primary text-xs">✓</span>}
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <p className="py-4 text-center text-xs text-muted-foreground">No assignees found</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AssigneeFilterPicker({ assigneeFilter, assigneePickerOpen, setAssigneePickerOpen, setAssigneeFilter, uniqueAssignees }: {
   assigneeFilter: string | null;
   assigneePickerOpen: boolean;
@@ -418,43 +475,12 @@ function AssigneeFilterPicker({ assigneeFilter, assigneePickerOpen, setAssigneeP
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search person..." />
-          <CommandList>
-            <CommandGroup>
-              <CommandItem
-                value="everyone"
-                onMouseDown={(e) => { e.preventDefault(); setAssigneeFilter(null); setAssigneePickerOpen(false); }}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="flex-1 text-muted-foreground">Everyone</span>
-                {!assigneeFilter && <span className="text-primary text-xs">✓</span>}
-              </CommandItem>
-              {uniqueAssignees.map(a => (
-                <CommandItem
-                  key={a.id}
-                  value={a.label}
-                  onMouseDown={(e) => { e.preventDefault(); setAssigneeFilter(a.id); setAssigneePickerOpen(false); }}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <Avatar className={cn('h-5 w-5 shrink-0', a.isExternal && 'ring-1 ring-dashed ring-orange-400')}>
-                    {!a.isExternal && <AvatarImage src={a.avatarUrl ?? ''} />}
-                    <AvatarFallback className={cn('text-[10px]', a.isExternal ? 'bg-orange-100 text-orange-700' : 'bg-primary text-primary-foreground')}>
-                      {a.label[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="flex-1 truncate">{a.label}</span>
-                  {a.isExternal && <span className="text-[10px] text-orange-500">ext</span>}
-                  {assigneeFilter === a.id && <span className="text-primary text-xs">✓</span>}
-                </CommandItem>
-              ))}
-              {uniqueAssignees.length === 0 && (
-                <p className="py-6 text-center text-sm text-muted-foreground">No assignees yet</p>
-              )}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+        <AssigneeDropdownList
+          assigneeFilter={assigneeFilter}
+          setAssigneeFilter={setAssigneeFilter}
+          setAssigneePickerOpen={setAssigneePickerOpen}
+          uniqueAssignees={uniqueAssignees}
+        />
       </PopoverContent>
     </Popover>
   );

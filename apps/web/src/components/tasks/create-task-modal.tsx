@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
-import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
@@ -228,61 +227,56 @@ export function CreateTaskModal({ projectId, defaultStatus = 'TODO', onClose, on
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-64 p-0" align="start">
-                <Command>
-                  <CommandInput
-                    placeholder="Search or type a name..."
-                    value={assigneeSearch}
-                    onValueChange={setAssigneeSearch}
-                  />
-                  <CommandList>
-                    <CommandGroup>
-                      <CommandItem
-                        value="unassigned"
-                        onMouseDown={(e) => { e.preventDefault(); setAssignee(null); setExternalAssigneeName(''); setAssigneeOpen(false); }}
-                      >
-                        <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Unassigned</span>
-                      </CommandItem>
-                      {members
-                        .filter(m => !assigneeSearch || m.displayName.toLowerCase().includes(assigneeSearch.toLowerCase()))
-                        .map(m => (
-                          <CommandItem
-                            key={m.id}
-                            value={m.displayName}
-                            onMouseDown={(e) => { e.preventDefault(); setAssignee(m); setExternalAssigneeName(''); setAssigneeOpen(false); }}
-                          >
-                            <Avatar className="h-5 w-5 mr-2 shrink-0">
-                              <AvatarImage src={m.avatarUrl ?? ''} />
-                              <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">{m.displayName?.[0]}</AvatarFallback>
-                            </Avatar>
-                            <span className="truncate">{m.displayName}</span>
-                          </CommandItem>
-                        ))}
-                      {/* Type a name to create an external assignee */}
-                      {assigneeSearch.trim().length > 1 && !members.some(m => m.displayName.toLowerCase() === assigneeSearch.toLowerCase()) && (
-                        <CommandItem
-                          value={`create-${assigneeSearch}`}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setAssignee(null);
-                            setExternalAssigneeName(assigneeSearch.trim());
-                            setAssigneeSearch('');
-                            setAssigneeOpen(false);
-                          }}
-                          className="gap-2 text-orange-600 dark:text-orange-400"
+                <div className="flex flex-col py-1">
+                  <div className="px-2 pb-1">
+                    <input
+                      autoFocus
+                      className="w-full px-2 py-1.5 text-sm bg-transparent border border-border rounded-md outline-none placeholder:text-muted-foreground"
+                      placeholder="Search or type a name..."
+                      value={assigneeSearch}
+                      onChange={e => setAssigneeSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="max-h-52 overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => { setAssignee(null); setExternalAssigneeName(''); setAssigneeOpen(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent transition-colors"
+                    >
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Unassigned</span>
+                    </button>
+                    {members
+                      .filter(m => !assigneeSearch || m.displayName.toLowerCase().includes(assigneeSearch.toLowerCase()))
+                      .map(m => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => { setAssignee(m); setExternalAssigneeName(''); setAssigneeOpen(false); }}
+                          className={cn('flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent transition-colors', assignee?.id === m.id && 'bg-accent')}
                         >
-                          <Plus className="h-4 w-4" />
-                          Add &quot;{assigneeSearch.trim()}&quot; as assignee
-                        </CommandItem>
-                      )}
-                    </CommandGroup>
-                    {!assigneeSearch && members.length === 0 && (
-                      <div className="py-6 text-center text-xs text-muted-foreground">
-                        No team members yet — type a name to assign manually
-                      </div>
+                          <Avatar className="h-5 w-5 shrink-0">
+                            <AvatarImage src={m.avatarUrl ?? ''} />
+                            <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">{m.displayName?.[0]}</AvatarFallback>
+                          </Avatar>
+                          <span className="flex-1 text-left truncate">{m.displayName}</span>
+                        </button>
+                      ))}
+                    {assigneeSearch.trim().length > 1 && !members.some(m => m.displayName.toLowerCase() === assigneeSearch.toLowerCase()) && (
+                      <button
+                        type="button"
+                        onClick={() => { setAssignee(null); setExternalAssigneeName(assigneeSearch.trim()); setAssigneeSearch(''); setAssigneeOpen(false); }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-accent transition-colors"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add &quot;{assigneeSearch.trim()}&quot; as assignee
+                      </button>
                     )}
-                  </CommandList>
-                </Command>
+                    {!assigneeSearch && members.length === 0 && (
+                      <p className="py-4 text-center text-xs text-muted-foreground">No members — type a name to assign</p>
+                    )}
+                  </div>
+                </div>
               </PopoverContent>
             </Popover>
 
