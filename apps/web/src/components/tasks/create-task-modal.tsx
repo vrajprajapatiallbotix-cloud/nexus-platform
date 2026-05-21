@@ -73,9 +73,17 @@ export function CreateTaskModal({ projectId, defaultStatus = 'TODO', onClose, on
 
   useEffect(() => {
     setFocus('title');
-    api.get<{ data: { members: Array<{ user: UserType }> } }>('/organizations/members')
-      .then(r => setMembers((r.data.data.members ?? []).map(m => m.user)))
-      .catch(() => {});
+    // Try workspace members first, fall back to org members
+    api.get<{ data: { members: Array<{ user: UserType }> } }>('/workspaces/current/members')
+      .then(r => setMembers((r.data.data?.members ?? []).map(m => m.user)))
+      .catch(() =>
+        api.get<{ data: { members: Array<{ user: UserType }> } }>('/users')
+          .then(r => {
+            const list = Array.isArray(r.data.data) ? r.data.data : (r.data.data as any)?.users ?? [];
+            setMembers(list);
+          })
+          .catch(() => {})
+      );
   }, []);
 
   const onSubmit = async (data: FormData) => {
@@ -228,14 +236,21 @@ export function CreateTaskModal({ projectId, defaultStatus = 'TODO', onClose, on
                   />
                   <CommandList>
                     <CommandGroup>
-                      <CommandItem onSelect={() => { setAssignee(null); setExternalAssigneeName(''); setAssigneeOpen(false); }}>
+                      <CommandItem
+                        value="unassigned"
+                        onSelect={() => { setAssignee(null); setExternalAssigneeName(''); setAssigneeOpen(false); }}
+                      >
                         <User className="mr-2 h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Unassigned</span>
                       </CommandItem>
                       {members
                         .filter(m => !assigneeSearch || m.displayName.toLowerCase().includes(assigneeSearch.toLowerCase()))
                         .map(m => (
-                          <CommandItem key={m.id} onSelect={() => { setAssignee(m); setExternalAssigneeName(''); setAssigneeOpen(false); }}>
+                          <CommandItem
+                            key={m.id}
+                            value={m.displayName}
+                            onSelect={() => { setAssignee(m); setExternalAssigneeName(''); setAssigneeOpen(false); }}
+                          >
                             <Avatar className="h-5 w-5 mr-2 shrink-0">
                               <AvatarImage src={m.avatarUrl ?? ''} />
                               <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">{m.displayName?.[0]}</AvatarFallback>
@@ -243,9 +258,10 @@ export function CreateTaskModal({ projectId, defaultStatus = 'TODO', onClose, on
                             <span className="truncate">{m.displayName}</span>
                           </CommandItem>
                         ))}
-                      {/* Manual name option — shown when typed name doesn't match any member */}
+                      {/* Type a name to create an external assignee */}
                       {assigneeSearch.trim().length > 1 && !members.some(m => m.displayName.toLowerCase() === assigneeSearch.toLowerCase()) && (
                         <CommandItem
+                          value={`create-${assigneeSearch}`}
                           onSelect={() => {
                             setAssignee(null);
                             setExternalAssigneeName(assigneeSearch.trim());
@@ -255,12 +271,14 @@ export function CreateTaskModal({ projectId, defaultStatus = 'TODO', onClose, on
                           className="gap-2 text-orange-600 dark:text-orange-400"
                         >
                           <Plus className="h-4 w-4" />
-                          Add &quot;{assigneeSearch.trim()}&quot; manually
+                          Add &quot;{assigneeSearch.trim()}&quot; as assignee
                         </CommandItem>
                       )}
                     </CommandGroup>
                     {!assigneeSearch && members.length === 0 && (
-                      <div className="py-6 text-center text-xs text-muted-foreground">No members found</div>
+                      <div className="py-6 text-center text-xs text-muted-foreground">
+                        No team members yet — type a name to assign manually
+                      </div>
                     )}
                   </CommandList>
                 </Command>
