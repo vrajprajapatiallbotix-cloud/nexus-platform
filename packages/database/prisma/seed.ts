@@ -335,8 +335,10 @@ async function main() {
 
   // ---- Chat channels ----
   const channels = await Promise.all([
-    prisma.channel.create({
-      data: {
+    prisma.channel.upsert({
+      where: { workspaceId_name: { workspaceId: workspace.id, name: 'general' } },
+      update: {},
+      create: {
         workspaceId: workspace.id,
         name: 'general',
         type: 'PUBLIC',
@@ -345,8 +347,10 @@ async function main() {
         createdBy: adminUser.id,
       },
     }),
-    prisma.channel.create({
-      data: {
+    prisma.channel.upsert({
+      where: { workspaceId_name: { workspaceId: workspace.id, name: 'engineering' } },
+      update: {},
+      create: {
         workspaceId: workspace.id,
         name: 'engineering',
         type: 'PUBLIC',
@@ -354,8 +358,10 @@ async function main() {
         createdBy: adminUser.id,
       },
     }),
-    prisma.channel.create({
-      data: {
+    prisma.channel.upsert({
+      where: { workspaceId_name: { workspaceId: workspace.id, name: 'random' } },
+      update: {},
+      create: {
         workspaceId: workspace.id,
         name: 'random',
         type: 'PUBLIC',
@@ -368,8 +374,10 @@ async function main() {
   // Add all users to general channel
   await Promise.all(
     allUsers.map((user) =>
-      prisma.channelMember.create({
-        data: { channelId: channels[0]!.id, userId: user.id },
+      prisma.channelMember.upsert({
+        where: { channelId_userId: { channelId: channels[0]!.id, userId: user.id } },
+        update: {},
+        create: { channelId: channels[0]!.id, userId: user.id },
       }),
     ),
   );
