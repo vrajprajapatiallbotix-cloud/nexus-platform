@@ -253,4 +253,18 @@ export class AuthService {
       data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorBackupCodes: [] },
     });
   }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (!user.passwordHash) throw new BadRequestException('No password set — use OAuth or magic link to log in');
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) throw new UnauthorizedException('Current password is incorrect');
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+  }
 }

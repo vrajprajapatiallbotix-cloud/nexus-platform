@@ -19,6 +19,7 @@ class ForgotPasswordDto { @IsEmail() email!: string; }
 class ResetPasswordDto { @IsString() token!: string; @IsString() @MinLength(8) password!: string; }
 class VerifyTwoFactorDto { @IsString() secret!: string; @IsString() code!: string; }
 class DisableTwoFactorDto { @IsString() password!: string; }
+class ChangePasswordDto { @IsString() currentPassword!: string; @IsString() @MinLength(8) newPassword!: string; }
 
 @ApiTags('auth')
 @Controller('auth')
@@ -160,6 +161,16 @@ export class AuthController {
   async disableTwoFactor(@CurrentUser('id') userId: string, @Body() dto: DisableTwoFactorDto) {
     await this.authService.disableTwoFactor(userId, dto.password);
     return { message: '2FA disabled successfully' };
+  }
+
+  // ---- Password change ----
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  async changePassword(@CurrentUser() user: User, @Body() dto: ChangePasswordDto) {
+    await this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
+    return { message: 'Password updated successfully' };
   }
 
   // ---- Me ----
