@@ -26,11 +26,36 @@ export default function SettingsPage() {
   const { user } = useAuthStore();
   const [activeSection, setActiveSection] = useState('profile');
   const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [profile, setProfile] = useState({
     firstName: user?.firstName ?? '',
     lastName: user?.lastName ?? '',
     displayName: user?.displayName ?? '',
   });
+  const [passwords, setPasswords] = useState({
+    current: '',
+    next: '',
+    confirm: '',
+  });
+
+  const changePassword = async () => {
+    if (!passwords.current) return toast.error('Enter your current password');
+    if (passwords.next.length < 8) return toast.error('New password must be at least 8 characters');
+    if (passwords.next !== passwords.confirm) return toast.error('Passwords do not match');
+    setChangingPassword(true);
+    try {
+      await api.post('/auth/change-password', {
+        currentPassword: passwords.current,
+        newPassword: passwords.next,
+      });
+      toast.success('Password updated successfully');
+      setPasswords({ current: '', next: '', confirm: '' });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to update password');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -186,17 +211,35 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label>Current password</Label>
-                    <Input type="password" placeholder="Enter current password" />
+                    <Input
+                      type="password"
+                      placeholder="Enter current password"
+                      value={passwords.current}
+                      onChange={e => setPasswords(p => ({ ...p, current: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>New password</Label>
-                    <Input type="password" placeholder="Enter new password" />
+                    <Input
+                      type="password"
+                      placeholder="At least 8 characters"
+                      value={passwords.next}
+                      onChange={e => setPasswords(p => ({ ...p, next: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Confirm new password</Label>
-                    <Input type="password" placeholder="Confirm new password" />
+                    <Input
+                      type="password"
+                      placeholder="Repeat new password"
+                      value={passwords.confirm}
+                      onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))}
+                    />
                   </div>
-                  <Button className="gap-2"><Key className="h-4 w-4" /> Update password</Button>
+                  <Button onClick={changePassword} disabled={changingPassword} className="gap-2">
+                    {changingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                    Update password
+                  </Button>
                 </div>
                 <Separator />
                 <div>
