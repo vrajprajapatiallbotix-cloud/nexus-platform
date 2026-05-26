@@ -292,46 +292,50 @@ async function main() {
     },
   });
 
-  // ---- Demo tasks (idempotent: delete project tasks first, then recreate) ----
-  await prisma.task.deleteMany({ where: { projectId: project.id } });
+  // ---- Demo tasks (only seed if none exist — preserves user changes across redeploys) ----
+  const existingTaskCount = await prisma.task.count({ where: { projectId: project.id } });
 
-  const taskData = [
-    // Manager account tasks
-    { title: 'Review Q3 product roadmap', status: 'TODO' as const, priority: 'URGENT' as const, assigneeId: managerUser.id },
-    { title: 'Security audit', status: 'TODO' as const, priority: 'URGENT' as const, assigneeId: managerUser.id },
-    { title: 'Billing integration (Stripe)', status: 'IN_PROGRESS' as const, priority: 'HIGH' as const, assigneeId: managerUser.id },
-    { title: 'Design system architecture', status: 'DONE' as const, priority: 'HIGH' as const, assigneeId: managerUser.id },
-    // Team Lead account tasks
-    { title: 'Implement authentication module', status: 'IN_PROGRESS' as const, priority: 'URGENT' as const, assigneeId: teamLeadUser.id },
-    { title: 'Realtime collaboration engine', status: 'TODO' as const, priority: 'HIGH' as const, assigneeId: teamLeadUser.id },
-    { title: 'Set up CI/CD pipeline', status: 'DONE' as const, priority: 'HIGH' as const, assigneeId: teamLeadUser.id },
-    // Employee account tasks
-    { title: 'Build task management UI', status: 'IN_PROGRESS' as const, priority: 'HIGH' as const, assigneeId: employeeUser.id },
-    { title: 'AI integration & assistant', status: 'TODO' as const, priority: 'HIGH' as const, assigneeId: employeeUser.id },
-    { title: 'Write unit tests for auth module', status: 'BACKLOG' as const, priority: 'MEDIUM' as const, assigneeId: employeeUser.id },
-    // Shared / unassigned tasks
-    { title: 'CRM module development', status: 'TODO' as const, priority: 'MEDIUM' as const, assigneeId: demoUsers[3]?.id },
-    { title: 'HR module development', status: 'BACKLOG' as const, priority: 'MEDIUM' as const, assigneeId: null },
-    { title: 'Mobile app development', status: 'BACKLOG' as const, priority: 'LOW' as const, assigneeId: null },
-    { title: 'Performance optimization', status: 'BACKLOG' as const, priority: 'MEDIUM' as const, assigneeId: demoUsers[0]?.id },
-  ];
+  if (existingTaskCount === 0) {
+    const taskData = [
+      // Manager account tasks
+      { title: 'Review Q3 product roadmap', status: 'TODO' as const, priority: 'URGENT' as const, assigneeId: managerUser.id },
+      { title: 'Security audit', status: 'TODO' as const, priority: 'URGENT' as const, assigneeId: managerUser.id },
+      { title: 'Billing integration (Stripe)', status: 'IN_PROGRESS' as const, priority: 'HIGH' as const, assigneeId: managerUser.id },
+      { title: 'Design system architecture', status: 'DONE' as const, priority: 'HIGH' as const, assigneeId: managerUser.id },
+      // Team Lead account tasks
+      { title: 'Implement authentication module', status: 'IN_PROGRESS' as const, priority: 'URGENT' as const, assigneeId: teamLeadUser.id },
+      { title: 'Realtime collaboration engine', status: 'TODO' as const, priority: 'HIGH' as const, assigneeId: teamLeadUser.id },
+      { title: 'Set up CI/CD pipeline', status: 'DONE' as const, priority: 'HIGH' as const, assigneeId: teamLeadUser.id },
+      // Employee account tasks
+      { title: 'Build task management UI', status: 'IN_PROGRESS' as const, priority: 'HIGH' as const, assigneeId: employeeUser.id },
+      { title: 'AI integration & assistant', status: 'TODO' as const, priority: 'HIGH' as const, assigneeId: employeeUser.id },
+      { title: 'Write unit tests for auth module', status: 'BACKLOG' as const, priority: 'MEDIUM' as const, assigneeId: employeeUser.id },
+      // Shared / unassigned tasks
+      { title: 'CRM module development', status: 'TODO' as const, priority: 'MEDIUM' as const, assigneeId: demoUsers[3]?.id },
+      { title: 'HR module development', status: 'BACKLOG' as const, priority: 'MEDIUM' as const, assigneeId: null },
+      { title: 'Mobile app development', status: 'BACKLOG' as const, priority: 'LOW' as const, assigneeId: null },
+      { title: 'Performance optimization', status: 'BACKLOG' as const, priority: 'MEDIUM' as const, assigneeId: demoUsers[0]?.id },
+    ];
 
-  await Promise.all(
-    taskData.map((data, i) =>
-      prisma.task.create({
-        data: {
-          ...data,
-          projectId: project.id,
-          creatorId: adminUser.id,
-          orderIndex: (i + 1) * 1000,
-          estimatedHours: Math.floor(Math.random() * 40) + 4,
-          dueDate: new Date(Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000),
-        },
-      }),
-    ),
-  );
+    await Promise.all(
+      taskData.map((data, i) =>
+        prisma.task.create({
+          data: {
+            ...data,
+            projectId: project.id,
+            creatorId: adminUser.id,
+            orderIndex: (i + 1) * 1000,
+            estimatedHours: Math.floor(Math.random() * 40) + 4,
+            dueDate: new Date(Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000),
+          },
+        }),
+      ),
+    );
 
-  console.log(`✅ Created ${taskData.length} demo tasks (manager: 4, lead: 3, employee: 3, shared: 4)`);
+    console.log(`✅ Created ${taskData.length} demo tasks (manager: 4, lead: 3, employee: 3, shared: 4)`);
+  } else {
+    console.log(`⏭️  Skipped task seed — ${existingTaskCount} tasks already exist`);
+  }
 
   // ---- Chat channels ----
   const channels = await Promise.all([
