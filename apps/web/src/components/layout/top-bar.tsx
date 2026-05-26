@@ -1,6 +1,8 @@
 'use client';
 
-import { Bell, Moon, Sun, Monitor, Search, Sparkles, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Bell, Moon, Sun, Monitor, Search, Sparkles, Plus, CheckSquare, FolderOpen, FileText, Video, Users } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,12 +14,15 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import { useNotificationStore } from '@/stores/notification.store';
 import { useAiAssistantStore } from '@/stores/ai-assistant.store';
+import { CreateTaskModal } from '@/components/tasks/create-task-modal';
 
 export function TopBar() {
   const { user, logout } = useAuthStore();
   const { unreadCount } = useNotificationStore();
   const { toggle: toggleAi } = useAiAssistantStore();
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
+  const [showCreateTask, setShowCreateTask] = useState(false);
 
   const themeIcon = theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor;
   const ThemeIcon = themeIcon;
@@ -44,11 +49,21 @@ export function TopBar() {
             <DropdownMenuLabel>Create new</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>Task</DropdownMenuItem>
-              <DropdownMenuItem>Project</DropdownMenuItem>
-              <DropdownMenuItem>Document</DropdownMenuItem>
-              <DropdownMenuItem>Meeting</DropdownMenuItem>
-              <DropdownMenuItem>Contact (CRM)</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setShowCreateTask(true)} className="gap-2">
+                <CheckSquare className="h-4 w-4 text-blue-500" /> Task
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push('/projects')} className="gap-2">
+                <FolderOpen className="h-4 w-4 text-orange-500" /> Project
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push('/docs')} className="gap-2">
+                <FileText className="h-4 w-4 text-green-500" /> Document
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push('/meetings')} className="gap-2">
+                <Video className="h-4 w-4 text-purple-500" /> Meeting
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push('/crm')} className="gap-2">
+                <Users className="h-4 w-4 text-pink-500" /> Contact (CRM)
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -118,9 +133,8 @@ export function TopBar() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Account settings</DropdownMenuItem>
-              <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push('/settings')}>Profile</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push('/settings')}>Account settings</DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={() => void logout()}>
@@ -129,6 +143,14 @@ export function TopBar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {showCreateTask && (
+        <CreateTaskModal
+          projectId=""
+          onClose={() => setShowCreateTask(false)}
+          onCreated={() => setShowCreateTask(false)}
+        />
+      )}
     </header>
   );
 }
